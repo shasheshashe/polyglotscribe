@@ -22,7 +22,7 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
     setSuccess('');
 
     // Treat username as email if not containing '@'
-    const email = username.includes('@') ? username : (username.toLowerCase() === 'shambel121419' ? 'negeseshambel@gmail.com' : `${username}@polyglotscribe.com`);
+    const email = username;
 
     try {
       if (isLogin) {
@@ -82,18 +82,18 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
 
         <form onSubmit={handleAuth} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Username or Email</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Email</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-4 w-4 text-slate-500" />
               </div>
               <input
-                type="text"
+                type="email"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                placeholder="negeseshambel@gmail.com or username"
+                placeholder="Email address"
               />
             </div>
           </div>
