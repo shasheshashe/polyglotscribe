@@ -1,3 +1,4 @@
+import { VitePWA } from 'vite-plugin-pwa';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -5,7 +6,35 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        devOptions: { enabled: true },
+        manifest: {
+          name: 'Multilingual Scribe',
+          short_name: 'Scribe',
+          description: 'Horn of Africa Speech Dictator & Voice Synthesis',
+          theme_color: '#020617',
+          background_color: '#020617',
+          display: 'standalone',
+          icons: [
+            {
+              src: '/icon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml'
+            },
+            {
+              src: '/icon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            }
+          ]
+        }
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

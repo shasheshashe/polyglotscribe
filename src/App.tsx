@@ -21,6 +21,8 @@ import {
   FileAudio,
   BookOpen,
   LogOut,
+  LogIn,
+  Share2,
 } from 'lucide-react';
 import { VOICE_CHARACTERS } from './data/voices';
 import { SupportedLanguage, DictationMode, ToastNotification } from './types';
@@ -75,6 +77,7 @@ export default function App() {
 
   // Auth State
   const [user, setUser] = useState<any>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
@@ -130,39 +133,6 @@ export default function App() {
 
 
   useEffect(() => {
-    // Auth Listener & Seed Admin
-    const seedAdmin = async () => {
-      try {
-        const adminEmail = 'negeseshambel@gmail.com';
-        const adminPass = 'Maraol121419.';
-        // Attempt to login to check if admin exists
-        await signInWithEmailAndPassword(auth, adminEmail, adminPass);
-      } catch (err: any) {
-        if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
-          try {
-            const cred = await createUserWithEmailAndPassword(auth, 'negeseshambel@gmail.com', 'Maraol121419.');
-            await setDoc(doc(db, 'users', cred.user.uid), {
-              email: cred.user.email,
-              role: 'admin',
-              createdAt: serverTimestamp()
-            });
-            await signOut(auth); // Sign out after seeding so normal flow continues
-          } catch (e: any) {
-            if (e.code === 'auth/operation-not-allowed') {
-              setError('Firebase Setup Required: Please enable "Email/Password" in your Firebase Authentication settings to allow admin login.');
-            } else if (e.code !== 'auth/email-already-in-use') {
-              console.warn('Seed creation skipped', e.code);
-            }
-          }
-        } else if (err.code === 'auth/operation-not-allowed') {
-          setError('Firebase Setup Required: Please enable "Email/Password" in your Firebase Authentication settings to allow admin login.');
-        }
-      }
-    };
-    
-    // Seed asynchronously without blocking
-    seedAdmin();
-
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
@@ -170,6 +140,10 @@ export default function App() {
         if (userDoc.exists()) {
           const fetchedRole = userDoc.data().role;
           setUserRole(currentUser.email === 'negeseshambel@gmail.com' ? 'admin' : fetchedRole);
+        } else if (currentUser.email === 'negeseshambel@gmail.com') {
+          setUserRole('admin');
+        } else {
+          setUserRole('user');
         }
       } else {
         setUserRole(null);
@@ -203,6 +177,16 @@ export default function App() {
       setSelectedVoiceId(matchingVoice.id);
     }
   }, [targetLang]);
+
+  // Auto-scroll the source textarea to bottom when transcript changes
+  useEffect(() => {
+    if (isListening) {
+      const textarea = document.getElementById('source-transcript-input') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.scrollTop = textarea.scrollHeight;
+      }
+    }
+  }, [transcript, interimTranscript, isListening]);
 
   // Web Speech API Initialization
   useEffect(() => {
@@ -503,7 +487,7 @@ export default function App() {
         stream.getTracks().forEach((track) => track.stop());
 
         // Process directly with Gemini transcription
-        showToast('Processing audio with Gemini AI...', 'loading');
+        showToast('Processing audio with AI...', 'loading');
         setIsTranscribingAudio(true);
 
         try {
@@ -535,7 +519,7 @@ export default function App() {
 
       mediaRecorder.start();
       setIsRecordingGemini(true);
-      showToast('Recording high-definition audio for Gemini...', 'loading');
+      showToast('Recording high-definition audio for AI...', 'loading');
     } catch (err) {
       console.error(err);
       setError('Unable to access microphone for recording. Please verify permissions.');
@@ -549,6 +533,19 @@ export default function App() {
     }
   };
 
+  
+  const copyPublicLink = () => {
+    const publicLink = 'https://ais-pre-llrc2cqk2snjfwztipirfq-825295273549.europe-west2.run.app';
+    navigator.clipboard.writeText(publicLink).then(() => {
+      showToast('Public link copied to clipboard!', 'success');
+    }).catch(() => {
+      showToast('Failed to copy link', 'error');
+    });
+  };
+
+
+
+
   const handleSourceLanguageChange = (lang: SupportedLanguage) => {
     setSourceLang(lang);
     showToast(`Source language: ${getLanguageLabel(lang)}`, 'info');
@@ -561,7 +558,7 @@ export default function App() {
     }
 
     setIsTranslating(true);
-    showToast('Translating with Gemini...', 'loading');
+    showToast('Translating with AI...', 'loading');
 
     try {
       const response = await fetch('/api/translate', {
@@ -696,7 +693,7 @@ export default function App() {
     }
 
     setIsTranscribingAudio(true);
-    showToast('Uploading and transcribing audio with Gemini AI...', 'loading');
+    showToast('Uploading and transcribing audio with AI...', 'loading');
 
     const fileToBase64 = (file: File): Promise<string> => {
       return new Promise((resolve, reject) => {
@@ -872,7 +869,7 @@ export default function App() {
               <img 
                 src="/logo.jpg" 
                 alt="Salale University Logo" 
-                className="h-10 w-auto object-contain bg-white rounded-lg p-1"
+                className="h-7 w-auto object-contain bg-white rounded-md p-0.5"
                 onError={(e) => {
                   e.currentTarget.src = 'https://placehold.co/100x100/1e293b/ffffff?text=SLU';
                 }}
@@ -880,13 +877,13 @@ export default function App() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight text-white">Salale Polyglot</h1>
+                <h1 className="text-base font-black tracking-tight text-white">Multilingual Scribe</h1>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   {userRole === 'admin' ? 'Admin Mode' : 'Horn of Africa AI'}
                 </span>
               </div>
-              <p className="text-slate-400 text-xs font-normal">
-                {user.email?.split('@')[0]} • Afaan Oromoo • Amharic • English
+              <p className="text-slate-400 text-[10px] font-medium">
+                {user?.email?.split('@')[0] || 'Guest Mode'} • Afaan Oromoo • Amharic • English
               </p>
             </div>
           </div>
@@ -895,25 +892,25 @@ export default function App() {
             <button
               id="tab-btn-live"
               onClick={() => setActiveTab('live')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === 'live'
                   ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-750 hover:text-white'
               }`}
             >
-              <Mic className="w-3.5 h-3.5" />
+              <Mic className="w-3 h-3" />
               Live Dictation & Translation
             </button>
             <button
               id="tab-btn-audio"
               onClick={() => setActiveTab('audio')}
-              className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 ${
                 activeTab === 'audio'
                   ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-750 hover:text-white'
               }`}
             >
-              <FileAudio className="w-3.5 h-3.5" />
+              <FileAudio className="w-3 h-3" />
               Transcribe Audio File
             </button>
 
@@ -921,32 +918,41 @@ export default function App() {
               <button
                 id="tab-btn-admin"
                 onClick={() => setActiveTab('admin')}
-                className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all flex items-center gap-1.5 ${
                   activeTab === 'admin'
                     ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
                     : 'bg-slate-800 text-slate-300 hover:bg-slate-750 hover:text-white'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5" />
+                <Activity className="w-3 h-3" />
                 Admin Dashboard
               </button>
             )}
             <button
               id="btn-reset-all"
               onClick={handleReset}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-700/60 transition-all flex items-center gap-1.5"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-700/60 transition-all flex items-center gap-1.5"
               title="Reset all fields"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-3 h-3" />
               <span className="hidden md:inline">Reset</span>
+            </button>
+            <button
+              id="btn-share-link"
+              onClick={copyPublicLink}
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 transition-all flex items-center gap-1.5 ml-2"
+              title="Share Public Link"
+            >
+              <Share2 className="w-3 h-3" />
+              <span className="hidden md:inline">Share App</span>
             </button>
             <button
               id="btn-logout"
               onClick={() => signOut(auth)}
-              className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700/60 transition-all flex items-center gap-1.5 ml-2"
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 border border-slate-700/60 transition-all flex items-center gap-1.5 ml-2"
               title="Sign Out"
             >
-              <LogOut className="w-3.5 h-3.5" />
+              <LogOut className="w-3 h-3" />
               <span className="hidden md:inline">Sign Out</span>
             </button>
           </div>
@@ -1020,12 +1026,12 @@ export default function App() {
                     {isRecordingGemini ? (
                       <>
                         <Square className="w-3.5 h-3.5" />
-                        Stop & Transcribe with Gemini
+                        Stop & Transcribe with AI
                       </>
                     ) : (
                       <>
                         <Radio className="w-3.5 h-3.5 text-indigo-400" />
-                        Record Audio via Gemini
+                        Record Audio via AI
                       </>
                     )}
                   </button>
@@ -1356,7 +1362,7 @@ export default function App() {
                       id="target-translation-output"
                       value={translatedText}
                       onChange={(e) => setTranslatedText(e.target.value)}
-                      placeholder="Your translated output will appear here. Press 'Translate with Gemini' below to begin."
+                      placeholder="Your translated output will appear here. Press 'Translate with AI' below to begin."
                       className="flex-grow w-full bg-transparent resize-none border-none focus:ring-0 text-sm sm:text-base text-slate-100 leading-relaxed placeholder-slate-500 outline-none"
                       spellCheck="false"
                     />
@@ -1467,7 +1473,7 @@ export default function App() {
                     className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold text-xs transition-all shadow-lg shadow-indigo-600/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer active:scale-95"
                   >
                     <Sparkles className="w-4 h-4" />
-                    {isTranslating ? 'Translating via Gemini...' : 'Translate with Gemini AI'}
+                    {isTranslating ? 'Translating with AI...' : 'Translate with AI'}
                   </button>
                 </div>
               </div>
@@ -1485,7 +1491,7 @@ export default function App() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-slate-100">
-                    Audio File Transcription via Gemini AI
+                    Audio File Transcription via AI
                   </h2>
                   <p className="text-slate-400 text-xs mt-0.5">
                     Upload voice recordings, interviews, speeches, or poetry audio (MP3, WAV, M4A, OGG, WebM)
@@ -1558,7 +1564,7 @@ export default function App() {
                     className="px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-indigo-600/20 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4" />
-                    {isTranscribingAudio ? 'Transcribing with Gemini...' : 'Start Audio Transcription'}
+                    {isTranscribingAudio ? 'Transcribing with AI...' : 'Start Audio Transcription'}
                   </button>
                 </div>
               </div>
@@ -1634,7 +1640,7 @@ export default function App() {
                   {isTranscribingAudio ? (
                     <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3">
                       <Activity className="w-8 h-8 text-indigo-500 animate-spin" />
-                      <p className="text-xs font-medium">Transcribing speech with Gemini AI...</p>
+                      <p className="text-xs font-medium">Transcribing speech with AI...</p>
                     </div>
                   ) : (
                     <textarea
@@ -1655,7 +1661,19 @@ export default function App() {
         )}
       </main>
 
+      
+      {/* Footer */}
+      <footer className="w-full text-center py-6 mt-auto border-t border-slate-800/60 flex flex-col gap-1 items-center justify-center relative z-10 bg-slate-950/50 backdrop-blur-sm">
+        <p className="text-sm font-semibold text-slate-300 tracking-wide">
+          Developed by Salale University Instructors &copy; 2026
+        </p>
+        <p className="text-xs text-slate-500 font-medium tracking-wider uppercase">
+          Address: Fiche
+        </p>
+      </footer>
+
       {/* Floating Status Toast Notification */}
+
       {toast && (
         <div
           id="toast-notification"

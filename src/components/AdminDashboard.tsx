@@ -8,6 +8,7 @@ import { format, startOfDay, subDays, isAfter } from 'date-fns';
 interface UserData {
   id: string;
   email: string;
+  fullName?: string;
   role: string;
   createdAt: any;
 }
@@ -32,6 +33,7 @@ export default function AdminDashboard() {
           fetchedUsers.push({
             id: doc.id,
             email: data.email,
+            fullName: data.fullName,
             role: data.role,
             createdAt: data.createdAt,
           });
@@ -231,7 +233,7 @@ export default function AdminDashboard() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-800/50 text-slate-300">
               <tr>
-                <th className="px-4 py-3 font-semibold rounded-tl-lg">Email / Username</th>
+                <th className="px-4 py-3 font-semibold rounded-tl-lg">User</th>
                 <th className="px-4 py-3 font-semibold">User ID</th>
                 <th className="px-4 py-3 font-semibold">Role</th>
                 <th className="px-4 py-3 font-semibold">Joined Date</th>
@@ -241,7 +243,10 @@ export default function AdminDashboard() {
             <tbody className="divide-y divide-slate-800/50">
               {displayedUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
-                  <td className="px-4 py-3 text-slate-200 font-medium">{user.email}</td>
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-slate-200">{user.fullName || "N/A"}</div>
+                    <div className="text-xs text-slate-500">{user.email}</div>
+                  </td>
                   <td className="px-4 py-3 text-slate-500 font-mono text-xs">{user.id}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs font-bold rounded-md ${

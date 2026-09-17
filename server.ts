@@ -99,9 +99,10 @@ Instead of just translating word-for-word, you must FIRST deeply understand the 
 
 Crucial Rules:
 1. Translate the IDEA and MEANING perfectly. Do not output awkward literal translations.
-2. Preserve formatting strictly (including stanza line breaks, poem verses, spacing, numbers, and punctuation).
-3. Maintain natural conversational idioms, cultural nuance, and authentic tone.
-4. Return ONLY the translated text without extra introductory commentary or markdown fences.`;
+2. Preserve formatting strictly (including stanza line breaks, poem verses, spacing, numbers).
+3. CRITICAL: You MUST apply highly accurate, grammatically correct punctuation (commas, periods, question marks, exclamation marks) appropriate for the target language based on the semantic structure of the text.
+4. Maintain natural conversational idioms, cultural nuance, and authentic tone.
+5. Return ONLY the translated text without extra introductory commentary or markdown fences.`;
 
       let translated = "";
       try {
@@ -115,8 +116,8 @@ Crucial Rules:
         });
         translated = response.text?.trim() || "";
       } catch (err: any) {
-        if (err.status === 503 || (err.message && err.message.includes('503'))) {
-          console.warn("gemini-3.8-flash overloaded, falling back to gemini-3.1-flash-lite");
+        if (err.status === 503 || err.status === 429 || (err.message && (err.message.includes('503') || err.message.includes('429') || err.message.toLowerCase().includes('quota')))) {
+          console.warn("Model overloaded or quota exceeded, falling back to gemini-3.1-flash-lite");
           const fallbackResponse = await ai.models.generateContent({
             model: "gemini-3.1-flash-lite",
             contents: text,
@@ -205,7 +206,9 @@ Crucial Rules:
         "If there are sudden changes in tone, pitch, volume, or speaking speed, adapt and continue transcribing flawlessly without skipping any words. " +
         "Pay close attention to fast-paced speech, rapid pronunciation, and complex regional dialects to ensure perfect accuracy. " +
         "Transcribe strictly using the proper orthography of the detected language (Qubee for Afaan Oromoo, Ge'ez script for Amharic, Latin alphabet for English). " +
-        "Preserve rhythm and structure: if it sounds like a poem, chant, or song, format into stanzas/lines. Otherwise, format into clean paragraphs. Return ONLY the transcribed text, nothing else.";
+        "Preserve rhythm and structure: if it sounds like a poem, chant, or song, format into stanzas/lines. Otherwise, format into clean paragraphs. " +
+        "CRITICAL: You MUST deduce and apply PERFECT, grammatically correct punctuation (commas, periods, question marks, exclamation marks, etc.) based on the speaker's pauses, intonation, and semantic sentence structure across all languages. " +
+        "Return ONLY the transcribed text, nothing else.";
 
       let transcription = "";
 
@@ -229,7 +232,7 @@ Crucial Rules:
       } catch (err: any) {
         console.warn("gemini-3.5-transcribe attempt had an issue, falling back:", err.message);
         
-        const fallbackModel = err.status === 503 || (err.message && err.message.includes('503')) 
+        const fallbackModel = err.status === 503 || err.status === 429 || (err.message && (err.message.includes('503') || err.message.includes('429') || err.message.toLowerCase().includes('quota'))) 
           ? "gemini-3.1-flash-lite" 
           : "gemini-3.8-flash";
 

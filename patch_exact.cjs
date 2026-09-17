@@ -1,0 +1,41 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/App.tsx', 'utf8');
+
+const targetStr = `            <button
+              id="btn-logout"`;
+
+const replaceStr = `            <button
+              id="btn-share-link"
+              onClick={copyPublicLink}
+              className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600/20 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30 transition-all flex items-center gap-1.5 ml-2"
+              title="Share Public Link"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Share App</span>
+            </button>
+            <button
+              id="btn-logout"`;
+
+code = code.split(targetStr).join(replaceStr);
+
+const funcTarget = `  const handleSourceLanguageChange`;
+const funcReplace = `  const copyPublicLink = () => {
+    const publicLink = 'https://ais-pre-llrc2cqk2snjfwztipirfq-825295273549.europe-west2.run.app';
+    navigator.clipboard.writeText(publicLink).then(() => {
+      showToast('Public link copied to clipboard!', 'success');
+    }).catch(() => {
+      showToast('Failed to copy link', 'error');
+    });
+  };
+
+  const handleSourceLanguageChange`;
+
+code = code.split(funcTarget).join(funcReplace);
+
+const iconTarget = `LogOut,`;
+const iconReplace = `LogOut,
+  Share2,`;
+
+code = code.split(iconTarget).join(iconReplace);
+
+fs.writeFileSync('src/App.tsx', code);

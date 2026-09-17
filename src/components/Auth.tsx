@@ -10,6 +10,7 @@ import { Languages, User, Lock, Mail, Activity, LogIn, UserPlus } from 'lucide-r
 export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
     setSuccess('');
 
     // Treat username as email if not containing '@'
-    const email = username;
+    const email = username.toLowerCase() === 'shambel121419' ? 'negeseshambel@gmail.com' : username;
 
     try {
       if (isLogin) {
@@ -35,6 +36,7 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
         
         await setDoc(doc(db, 'users', userCredential.user.uid), {
           email: userCredential.user.email,
+          fullName: fullName,
           role: assignedRole,
           createdAt: serverTimestamp()
         });
@@ -59,10 +61,17 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-2xl">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md shadow-indigo-500/20 text-white mb-4">
-            <Languages className="w-8 h-8" />
+          <div className="mb-4">
+            <img 
+              src="/logo.jpg" 
+              alt="Logo" 
+              className="h-10 w-auto object-contain bg-white rounded-xl p-1 shadow-md shadow-indigo-500/10"
+              onError={(e) => {
+                e.currentTarget.src = 'https://placehold.co/100x100/1e293b/ffffff?text=MS';
+              }}
+            />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">PolyglotScribe</h1>
+          <h1 className="text-lg font-black tracking-tight text-white mt-2">Multilingual Scribe</h1>
           <p className="text-slate-400 text-sm mt-2">
             {isLogin ? 'Sign in to access your workspace' : 'Create an account to get started'}
           </p>
@@ -81,19 +90,37 @@ export default function Auth({ onAuthSuccess }: { onAuthSuccess: () => void }) {
         )}
 
         <form onSubmit={handleAuth} className="space-y-4">
+          {!isLogin && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Full Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-4 w-4 text-slate-500" />
+                </div>
+                <input
+                  type="text"
+                  required={!isLogin}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="John Doe"
+                />
+              </div>
+            </div>
+          )}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Email</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wide">Email / Admin Username</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <User className="h-4 w-4 text-slate-500" />
               </div>
               <input
-                type="email"
+                type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all"
-                placeholder="Email address"
+                placeholder="Email address (or admin username)"
               />
             </div>
           </div>

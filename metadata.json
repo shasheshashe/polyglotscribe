@@ -1,5 +1,5 @@
 {
-  "name": "PolyglotScribe",
+  "name": "Multilingual Scribe",
   "description": "Horn of Africa Speech Dictator & Professional Voice Synthesis for Afaan Oromoo, Amharic, and English.",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
